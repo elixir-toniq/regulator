@@ -3,7 +3,11 @@ defmodule Regulator.Limit.AIMD do
   Loss based dynamic limit algorithm. Additively increases the concurrency
   limit when there are no errors and multiplicatively decrements the limit
   when there are errors.
+
+  ## Options
   """
+  @behaviour Regulator.Limit
+
   defstruct [
     min_limit: 20,
     initial_limit: 20,
@@ -12,7 +16,11 @@ defmodule Regulator.Limit.AIMD do
     timeout: 5,
   ]
 
-  def update(limit, current_limit, rtt, inflight, was_dropped) do
+  def initial(opts) do
+    opts[:initial_limit]
+  end
+
+  def update(window, opts) do #limit, current_limit, rtt, inflight, was_dropped) do
     current_limit = cond do
       # If we've dropped a request or if the avg rtt is less than the timeout
       # we backoff

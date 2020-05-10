@@ -7,6 +7,8 @@ defmodule Regulator.LimitCalculator do
   # time window before processing.
   use GenServer
 
+  alias Regulator.Buffer
+  alias Regulator.Limits
   alias Regulator.Window
 
   require Logger
@@ -24,35 +26,22 @@ defmodule Regulator.LimitCalculator do
   end
 
   def handle_info(:calculate, state) do
-    entries =
-      state.buffers
-      |> Enum.flat_map(fn tab ->
-        case :ets.lookup(tab, :index) do
-          [{:index, index}] ->
-            records = :ets.select(tab, ms(index))
-            :ets.select_delete(tab, ms(index))
-            records
-
-          [] ->
-            []
-        end
-      end)
-
-    window = Enum.reduce(entries, Window.new(), fn entry, window ->
-      Window.add(window, entry)
-    end)
+    window =
+      state.buffer
+      |> Buffer.flush_latest
+      |> Enum.reduce(Window.new(), fn entry, window -> Window.add(window, entry) end)
 
     Logger.debug("Do some limiting math here...")
     Logger.debug(fn -> "Window: #{inspect window}" end)
 
+    current_limit = Limits.limit(state.limit)
+    {mod, opts} = state.limit
+    new_limit = mod.update(current_limit, window, opts)
+    Limits.set_limit(state.limits, new_limit)
+
     schedule()
 
     {:noreply, state}
-  end
-
-  defp ms(index) do
-    # Get integers less than the current index
-    [{{:"$1", :"$2"}, [{:andalso, {:is_integer, :"$1"}, {:<, :"$1", index}}], [:"$2"]}]
   end
 
   defp schedule(timeout \\ 10_000) do

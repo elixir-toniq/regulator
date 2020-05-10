@@ -8,19 +8,14 @@ defmodule Regulator.LimiterSup do
 
   def init(opts) do
     name = opts[:name]
+    {mod, limit_opts} = opts[:limit]
+    initial_limit = mod.initial(limit_opts)
 
-    # 1 index erlang ftw
-    buffers = for s <- 1..System.schedulers() do
-      :ets.new(:"#{name}-#{s}", [:named_table, :set, :public, {:write_concurrency, true}])
-    end
-
-    limits = :ets.new(:"#{name}-limits", [:named_table, :set, :public, {:write_concurrency, true}])
-    # TODO - Store the initial limit at this point
-    :ets.insert(:"#{name}-limits", {:max_inflight, 10})
-    :ets.insert(:"#{name}-limits", {:inflight, 0})
+    buffer = Regulator.Buffer.new(name)
+    limits = Regulator.Limits.new(name, initial_limit)
 
     children = [
-      {Regulator.LimitCalculator, buffers: buffers, limits: limits, limit: opts[:limit]}
+      {Regulator.LimitCalculator, buffer: buffer, limits: limits, limit: opts[:limit]}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

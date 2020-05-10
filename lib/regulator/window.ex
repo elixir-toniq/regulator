@@ -1,6 +1,16 @@
 defmodule Regulator.Window do
-  @moduledoc false
-  # Tracks a bunch of requests for a window of time
+  @moduledoc """
+  Tracks samples over a window of time (typically 1 second). This window
+  is used to derive new concurrency limits.
+  """
+
+  @type t :: %{
+    sum: pos_integer(),
+    min_rtt: pos_integer(),
+    max_inflight: pos_integer(),
+    sample_count: pos_integer(),
+    did_drop?: boolean(),
+  }
 
   def new do
     %{

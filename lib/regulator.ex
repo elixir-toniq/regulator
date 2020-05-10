@@ -5,6 +5,8 @@ defmodule Regulator do
   alias Regulator.Context
   alias Regulator.Regulators
   alias Regulator.LimiterSup
+  alias Regulator.Limits
+  alias Regulator.Buffer
 
   def install(name, limit) do
     opts = %{name: name, limit: limit}
@@ -15,42 +17,34 @@ defmodule Regulator do
   Determine if we have available concurrency to make another request
   """
   def ask(name) do
-    # TODO - Build functions for these names
-    [{:max_inflight, limit}]    = :ets.lookup(:"#{name}-limits", :max_inflight)
-    inflight = :ets.update_counter(:"#{name}-limits", :inflight, {2, 1, limit, limit}, {:inflight, 0})
+    inflight = Limits.add(name)
 
-    # If we have fewer inflight requests than the limit let it through
-    if inflight < limit do
+    if inflight <= Limits.limit(name) do
       {:ok, Context.new(name, inflight)}
     else
+      Limits.sub(name)
       :dropped
     end
   end
 
   def success(context) do
-    :ets.update_counter(:"#{context.regulator}-limits", :inflight, {2, -1, 0, 0}, {:inflight, 0})
-    buffer = :"#{context.regulator}-#{:erlang.system_info(:scheduler_id)}"
-    stop = System.monotonic_time()
-    rtt = stop - context.start
-    index = :ets.update_counter(buffer, :index, 1, {:index, 0})
-    :ets.insert(buffer, {index, {rtt, context.inflight, false}})
+    rtt = System.monotonic_time() - context.start
+    Limits.sub(context.regulator)
+    Buffer.add_sample(context.regulator, {rtt, context.inflight, false})
 
     :ok
   end
 
   def dropped(context) do
-    :ets.update_counter(:"#{context.regulator}-limits", :inflight, {2, -1, 0, 0}, {:inflight, 0})
-    buffer = :"#{context.regulator}-#{:erlang.system_info(:scheduler_id)}"
-    stop = System.monotonic_time()
-    rtt = stop - context.start
-    index = :ets.update_counter(buffer, :index, 1, {:index, 0})
-    :ets.insert(buffer, {index, {rtt, context.inflight, true}})
+    rtt = System.monotonic_time() - context.start
+    Limits.sub(context.regulator)
+    Buffer.add_sample(context.regulator, {rtt, context.inflight, true})
 
     :ok
   end
 
   def ignore(context) do
-    :ets.update_counter(:"#{context.regulator}-limits", :inflight, {2, -1, 0, 0}, {:inflight, 0})
+    Limits.sub(context.regulator)
 
     :ok
   end

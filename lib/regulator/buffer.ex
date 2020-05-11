@@ -29,8 +29,9 @@ defmodule Regulator.Buffer do
     Enum.flat_map(buffer.tabs, fn tab ->
       case :ets.lookup(tab, :index) do
         [{:index, index}] ->
-          records = :ets.select(tab, ms(index))
-          :ets.select_delete(tab, ms(index))
+          records = :ets.select(tab, select_spec(index))
+          :ets.select_delete(tab, delete_spec(index))
+          IO.inspect(:ets.tab2list(tab), label: "Table")
           records
 
         [] ->
@@ -39,8 +40,17 @@ defmodule Regulator.Buffer do
     end)
   end
 
-  defp ms(index) do
+  defp delete_spec(index) do
+    match_spec(index, true)
+  end
+
+  def select_spec(index) do
+    # If we're selecting stuff we need to get the second element
+    match_spec(index, :"$2")
+  end
+
+  defp match_spec(index, item) do
     # Get integers less than the current index
-    [{{:"$1", :"$2"}, [{:andalso, {:is_integer, :"$1"}, {:<, :"$1", index}}], [:"$2"]}]
+    [{{:"$1", :"$2"}, [{:andalso, {:is_integer, :"$1"}, {:"=<", :"$1", index}}], [item]}]
   end
 end

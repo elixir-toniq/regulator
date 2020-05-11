@@ -8,12 +8,15 @@ defmodule Regulator.Limit.Static do
   @behaviour Regulator.Limit
 
   @impl true
+  def new(opts), do: Map.new(opts)
+
+  @impl true
   def initial(opts) do
-    Keyword.fetch!(opts, :limit)
+    opts.limit
   end
 
   @impl true
-  def update(_window, opts) do
-    Keyword.fetch!(opts, :limit)
+  def update(_current_limit, _window, opts) do
+    opts.limit
   end
 end

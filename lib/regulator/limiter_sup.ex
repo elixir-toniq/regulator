@@ -14,8 +14,15 @@ defmodule Regulator.LimiterSup do
     buffer = Regulator.Buffer.new(name)
     limits = Regulator.Limits.new(name, initial_limit)
 
+    calculator_config = %{
+      name: name,
+      buffer: buffer,
+      limits: limits,
+      limit: opts[:limit]
+    }
+
     children = [
-      {Regulator.LimitCalculator, buffer: buffer, limits: limits, limit: opts[:limit]}
+      {Regulator.LimitCalculator, calculator_config}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

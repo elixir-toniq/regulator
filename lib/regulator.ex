@@ -8,8 +8,8 @@ defmodule Regulator do
   alias Regulator.Limits
   alias Regulator.Buffer
 
-  def install(name, limit) do
-    opts = %{name: name, limit: limit}
+  def install(name, {mod, opts}) do
+    opts = %{name: name, limit: {mod, mod.new(opts)}}
     DynamicSupervisor.start_child(Regulators, {LimiterSup, opts})
   end
 

@@ -8,6 +8,8 @@ defmodule Regulator.Limit.AIMD do
   """
   @behaviour Regulator.Limit
 
+  alias Regulator.Window
+
   defstruct [
     min_limit: 20,
     initial_limit: 20,
@@ -16,31 +18,43 @@ defmodule Regulator.Limit.AIMD do
     timeout: 5,
   ]
 
-  def initial(opts) do
-    opts[:initial_limit]
+  def new(opts) do
+    config = struct(__MODULE__, opts)
+    %{config | timeout: System.convert_time_unit(config.timeout, :millisecond, :native)}
   end
 
-  def update(window, opts) do #limit, current_limit, rtt, inflight, was_dropped) do
+  def initial(config) do
+    config.initial_limit
+  end
+
+  def update(current_limit, window, config) do #limit, current_limit, rtt, inflight, was_dropped) do
     current_limit = cond do
-      # If we've dropped a request or if the avg rtt is less than the timeout
+      # If we've dropped a request or if the avg rtt is greater than the timeout
       # we backoff
-      was_dropped || rtt > limit.timeout ->
+      window.did_drop? || Window.avg_rtt(window) > config.timeout ->
+        # IO.puts "BACKING OFF>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+        # IO.inspect(Window.avg_rtt(window), label: "Average rtt")
         # Floors the value and converts to integer
-        trunc(current_limit * limit.backoff_ratio)
+        trunc(current_limit * config.backoff_ratio)
 
       # If we're halfway to the current limit go ahead and increase the limit.
-      current_limit <= inflight * 2 ->
-        current_limit + 1
+      window.max_inflight * 2 >= current_limit ->
+        current_limit + window.sample_count
+
+      true ->
+        current_limit
     end
 
     # If we're at the max limit reset to 50% of the maximum limit
-    current_limit = if limit.max_limit <= current_limit do
+    current_limit = if config.max_limit <= current_limit do
       div(current_limit, 2)
     else
       current_limit
     end
 
+    IO.inspect(current_limit, label: "NEW LIMIT >>>>>>>>>>>>>>>>>>>>>")
+
     # Return the new limit bounded by the configured min and max
-    min(limit.max_limit, max(limit.min_limit, current_limit))
+    min(config.max_limit, max(config.min_limit, current_limit))
   end
 end

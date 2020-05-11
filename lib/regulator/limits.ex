@@ -3,12 +3,12 @@ defmodule Regulator.Limits do
   # Module for interacting with the current inflight count and the maximum inflight limit.
 
   def new(name, initial_limit) do
-    table = :ets.new(:"#{name}-limits", [:named_table, :set, :public, {:write_concurrency, true}])
+    _table = :ets.new(:"#{name}-limits", [:named_table, :set, :public, {:write_concurrency, true}])
 
     :ets.insert(:"#{name}-limits", {:max_inflight, initial_limit})
     :ets.insert(:"#{name}-limits", {:inflight, 0})
 
-    table
+    name
   end
 
   # Add a new inflight request
@@ -26,7 +26,7 @@ defmodule Regulator.Limits do
     limit
   end
 
-  def set_limit(limits, limit) do
-    :ets.insert(limits, {:max_inflight, limit})
+  def set_limit(name, limit) do
+    :ets.insert(:"#{name}-limits", {:max_inflight, limit})
   end
 end

@@ -17,9 +17,7 @@ defmodule Regulator.LimitCalculator do
     GenServer.start_link(__MODULE__, opts)
   end
 
-  def init(opts) do
-    data = Map.new(opts)
-
+  def init(data) do
     schedule()
 
     {:ok, data}
@@ -34,9 +32,10 @@ defmodule Regulator.LimitCalculator do
     Logger.debug("Do some limiting math here...")
     Logger.debug(fn -> "Window: #{inspect window}" end)
 
-    current_limit = Limits.limit(state.limit)
+    current_limit = Limits.limit(state.limits)
     {mod, opts} = state.limit
     new_limit = mod.update(current_limit, window, opts)
+    Logger.debug("New limit for #{state.name}: #{new_limit}")
     Limits.set_limit(state.limits, new_limit)
 
     schedule()
@@ -44,7 +43,7 @@ defmodule Regulator.LimitCalculator do
     {:noreply, state}
   end
 
-  defp schedule(timeout \\ 10_000) do
+  defp schedule(timeout \\ 1_000) do
     # next time = min(max(min_time * 2, 1_000), 1_000)
     # If our minimum requests are taking way longer than 1 second than don't try
     # schedule another

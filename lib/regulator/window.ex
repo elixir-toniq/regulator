@@ -17,7 +17,7 @@ defmodule Regulator.Window do
       # The total rtt for all requests
       sum: 0,
       # min rtt seen
-      min_rtt: 0,
+      min_rtt: nil,
 
       # Max in-flight requests
       max_inflight: 0,
@@ -32,7 +32,7 @@ defmodule Regulator.Window do
   def add(window, {rtt, inflight, was_dropped}) do
     window
     |> Map.update!(:sum, & &1 + rtt)
-    |> Map.update!(:min_rtt, & min(&1, rtt))
+    |> Map.update!(:min_rtt, & (if &1 == nil, do: rtt, else: min(&1, rtt)))
     |> Map.update!(:max_inflight, & max(&1, inflight))
     |> Map.update!(:sample_count, & &1 + 1)
     |> Map.update!(:did_drop?, & &1 || was_dropped)

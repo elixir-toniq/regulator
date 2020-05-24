@@ -31,7 +31,6 @@ defmodule Regulator.Buffer do
         [{:index, index}] ->
           records = :ets.select(tab, select_spec(index))
           :ets.select_delete(tab, delete_spec(index))
-          IO.inspect(:ets.tab2list(tab), label: "Table")
           records
 
         [] ->

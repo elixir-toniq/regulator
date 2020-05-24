@@ -33,13 +33,12 @@ defmodule Regulator.Limit.AIMD do
       # we backoff
       window.did_drop? || Window.avg_rtt(window) > config.timeout ->
         # IO.puts "BACKING OFF>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-        # IO.inspect(Window.avg_rtt(window), label: "Average rtt")
         # Floors the value and converts to integer
         trunc(current_limit * config.backoff_ratio)
 
       # If we're halfway to the current limit go ahead and increase the limit.
       window.max_inflight * 2 >= current_limit ->
-        current_limit + window.sample_count
+        current_limit + 10
 
       true ->
         current_limit
@@ -51,8 +50,6 @@ defmodule Regulator.Limit.AIMD do
     else
       current_limit
     end
-
-    IO.inspect(current_limit, label: "NEW LIMIT >>>>>>>>>>>>>>>>>>>>>")
 
     # Return the new limit bounded by the configured min and max
     min(config.max_limit, max(config.min_limit, current_limit))

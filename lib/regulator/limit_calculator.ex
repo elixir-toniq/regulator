@@ -29,9 +29,6 @@ defmodule Regulator.LimitCalculator do
       |> Buffer.flush_latest
       |> Enum.reduce(Window.new(), fn entry, window -> Window.add(window, entry) end)
 
-    Logger.debug("Do some limiting math here...")
-    Logger.debug(fn -> "Window: #{inspect window}" end)
-
     current_limit = Limits.limit(state.limits)
     {mod, opts} = state.limit
     new_limit = mod.update(current_limit, window, opts)

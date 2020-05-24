@@ -32,7 +32,7 @@ defmodule Regulator.Limit.AIMD do
       # If we've dropped a request or if the avg rtt is greater than the timeout
       # we backoff
       window.did_drop? || Window.avg_rtt(window) > config.timeout ->
-        # IO.puts "BACKING OFF>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+        IO.puts "BACKING OFF>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
         # Floors the value and converts to integer
         trunc(current_limit * config.backoff_ratio)
 

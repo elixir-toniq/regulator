@@ -10,6 +10,7 @@ defmodule Regulator.LimitCalculator do
   alias Regulator.Buffer
   alias Regulator.Limits
   alias Regulator.Window
+  alias Regulator.Telemetry
 
   require Logger
 
@@ -34,6 +35,7 @@ defmodule Regulator.LimitCalculator do
     new_limit = mod.update(current_limit, window, opts)
     Logger.debug("New limit for #{state.name}: #{new_limit}")
     Limits.set_limit(state.limits, new_limit)
+    Telemetry.event(:limit, %{limit: new_limit}, %{regulator: state.name})
 
     schedule()
 

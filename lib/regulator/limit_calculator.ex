@@ -32,10 +32,15 @@ defmodule Regulator.LimitCalculator do
 
     current_limit = Limits.limit(state.limits)
     {mod, opts} = state.limit
-    new_limit = mod.update(current_limit, window, opts)
-    Logger.debug("New limit for #{state.name}: #{new_limit}")
+    {opts, new_limit} = mod.update(opts, current_limit, window)
+
+    if current_limit != new_limit do
+      Logger.debug("New limit: #{new_limit}")
+    end
+
     Limits.set_limit(state.limits, new_limit)
     Telemetry.event(:limit, %{limit: new_limit}, %{regulator: state.name})
+    state = %{state | limit: {mod, opts}}
 
     schedule()
 

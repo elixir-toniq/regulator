@@ -15,7 +15,8 @@ defmodule Regulator.Limit do
 
   @doc """
   Recalculates the new limit based on the previous limit, the most
-  recent window, and the configuration for the limit.
+  recent window, and the configuration for the limit. Must return the
+  limit configuration with the new limit in a tuple.
   """
-  @callback update(pos_integer(), Regulator.Window.t(), term()) :: pos_integer()
+  @callback update(term(), pos_integer(), Regulator.Window.t()) :: {term(), pos_integer()}
 end

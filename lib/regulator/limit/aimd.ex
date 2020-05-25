@@ -18,21 +18,23 @@ defmodule Regulator.Limit.AIMD do
     timeout: 5,
   ]
 
+  @impl true
   def new(opts) do
     config = struct(__MODULE__, opts)
     %{config | timeout: System.convert_time_unit(config.timeout, :millisecond, :native)}
   end
 
+  @impl true
   def initial(config) do
     config.initial_limit
   end
 
-  def update(current_limit, window, config) do #limit, current_limit, rtt, inflight, was_dropped) do
+  @impl true
+  def update(config, current_limit, window) do
     current_limit = cond do
       # If we've dropped a request or if the avg rtt is greater than the timeout
       # we backoff
       window.did_drop? || Window.avg_rtt(window) > config.timeout ->
-        IO.puts "BACKING OFF>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
         # Floors the value and converts to integer
         trunc(current_limit * config.backoff_ratio)
 
@@ -52,6 +54,6 @@ defmodule Regulator.Limit.AIMD do
     end
 
     # Return the new limit bounded by the configured min and max
-    min(config.max_limit, max(config.min_limit, current_limit))
+    {config, min(config.max_limit, max(config.min_limit, current_limit))}
   end
 end

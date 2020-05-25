@@ -16,7 +16,7 @@ defmodule Regulator.Limit.Static do
   end
 
   @impl true
-  def update(_current_limit, _window, opts) do
-    opts.limit
+  def update(static, _current_limit, _window) do
+    {static, static.limit}
   end
 end

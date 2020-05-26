@@ -4,6 +4,6 @@ defmodule Regulator.Limit.AIMDTest do
   alias Regulator.Limit.AIMD
 
   test "can create an aimd limit" do
-    limit = %AIMD{}
+    _limit = %AIMD{}
   end
 end

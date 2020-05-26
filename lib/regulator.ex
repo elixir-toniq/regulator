@@ -5,52 +5,88 @@ defmodule Regulator do
   alias Regulator.Context
   alias Regulator.Regulators
   alias Regulator.LimiterSup
+  alias Regulator.Limits
+  alias Regulator.Buffer
+  alias Regulator.Telemetry
 
-  def install(name, limit) do
-    opts = %{name: name, limit: limit}
+  def install(name, {mod, opts}) do
+    opts = %{name: name, limit: {mod, mod.new(opts)}}
     DynamicSupervisor.start_child(Regulators, {LimiterSup, opts})
+  end
+
+  def ask(name, f) do
+    inflight = Limits.add(name)
+    start = Telemetry.start(:ask, %{regulator: name}, %{inflight: inflight})
+
+    try do
+      if inflight <= Limits.limit(name) do
+        {result, user_result} = f.()
+        rtt                   = System.monotonic_time() - start
+        Limits.sub(name)
+
+        case result do
+          :ok ->
+            Telemetry.stop(:ask, start, %{regulator: name, result: :ok})
+            Buffer.add_sample(name, {rtt, inflight, false})
+            user_result
+
+          :drop ->
+            Telemetry.stop(:ask, start, %{regulator: name, result: :drop})
+            Buffer.add_sample(name, {rtt, inflight, true})
+            user_result
+
+          :ignore ->
+            Telemetry.stop(:ask, start, %{regulator: name, result: :ignore})
+            user_result
+        end
+      else
+        Telemetry.stop(:ask, start, %{regulator: name, result: :dropped})
+        Limits.sub(name)
+        :dropped
+      end
+    rescue
+      error ->
+        Telemetry.exception(:ask, start, :error, error, __STACKTRACE__, %{regulator: name})
+        reraise error, __STACKTRACE__
+    catch
+      :exit, reason ->
+        Telemetry.exception(:ask, start, :exit, reason, __STACKTRACE__, %{regulator: name})
+        exit(reason)
+    end
   end
 
   @doc """
   Determine if we have available concurrency to make another request
   """
   def ask(name) do
-    # TODO - Build functions for these names
-    [{:max_inflight, limit}]    = :ets.lookup(:"#{name}-limits", :max_inflight)
-    inflight = :ets.update_counter(:"#{name}-limits", :inflight, {2, 1, limit, limit}, {:inflight, 0})
+    inflight = Limits.add(name)
 
-    # If we have fewer inflight requests than the limit let it through
-    if inflight < limit do
+    if inflight <= Limits.limit(name) do
       {:ok, Context.new(name, inflight)}
     else
+      Limits.sub(name)
       :dropped
     end
   end
 
   def success(context) do
-    :ets.update_counter(:"#{context.regulator}-limits", :inflight, {2, -1, 0, 0}, {:inflight, 0})
-    buffer = :"#{context.regulator}-#{:erlang.system_info(:scheduler_id)}"
-    stop = System.monotonic_time()
-    rtt = stop - context.start
-    index = :ets.update_counter(buffer, :index, 1, {:index, 0})
-    :ets.insert(buffer, {index, {rtt, context.inflight, false}})
+    rtt = System.monotonic_time() - context.start
+    Limits.sub(context.regulator)
+    Buffer.add_sample(context.regulator, {rtt, context.inflight, false})
 
     :ok
   end
 
   def dropped(context) do
-    :ets.update_counter(:"#{context.regulator}-limits", :inflight, {2, -1, 0, 0}, {:inflight, 0})
-    buffer = :"#{context.regulator}-#{:erlang.system_info(:scheduler_id)}"
-    stop = System.monotonic_time()
-    rtt = stop - context.start
-    index = :ets.update_counter(buffer, :index, 1, {:index, 0})
-    :ets.insert(buffer, {index, {rtt, context.inflight, true}})
+    rtt = System.monotonic_time() - context.start
+    Limits.sub(context.regulator)
+    Buffer.add_sample(context.regulator, {rtt, context.inflight, true})
 
     :ok
   end
 
   def ignore(context) do
-    :ets.update_counter(:"#{context.regulator}-limits", :inflight, {2, -1, 0, 0}, {:inflight, 0})
+    Limits.sub(context.regulator)
 
     :ok
   end

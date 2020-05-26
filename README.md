@@ -3,14 +3,13 @@
 Regulator provides adaptive concurrency limits around external resources.
 
 ```elixir
-def call_a_service do
-  Regulator.acquire(:service, fn
-    :ok -> Finch.get("https://keathley.io")
-    :dropped -> get_cached_content()
-  end)
+Regulator.install(:service, {Regulator.Limit.AIMD, [timeout: 500]})
 
-  Regulator.acquire(:service, fn ->
-    Finch.get("https://keathley.io")
-  end)
-end
+Regulator.ask(:service, fn ->
+  {:ok, Finch.request(:get, "https://keathley.io")}
+end)
 ```
+
+## Should I use this
+
+Probably not yet.

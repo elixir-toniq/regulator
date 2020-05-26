@@ -1,6 +1,7 @@
 defmodule Regulator.Limit.Gradient do
   @moduledoc """
-  Limiter based on the gradient of change.
+  Limiter based on the gradient of change. Based on Netflix's gradient2 algorithm.
+  https://github.com/Netflix/concurrency-limits.
   """
 
   @behaviour Regulator.Limit
@@ -39,7 +40,7 @@ defmodule Regulator.Limit.Gradient do
 
     # If we don't have enough inflight requests we don't really need to grow the limit
     # So just bail out.
-    if (window.max_inflight < gradient.estimated_limit / 2) do
+    if window.max_inflight < gradient.estimated_limit / 2 do
       {gradient, gradient.estimated_limit}
     else
       grad = max(0.5, min(1.0, gradient.rtt_tolerance * long_rtt.value / short_rtt))
@@ -62,7 +63,7 @@ defmodule Regulator.Limit.Gradient do
     # long RTT measurement. This can happen when latency returns to normal after
     # a excessive load. Reducing the long RTT without waiting for the exponential
     # smoothing helps bring teh system back to steady state.
-    if (long_rtt.value / rtt > 2) do
+    if long_rtt.value / rtt > 2 do
       ExpAvg.update(long_rtt, fn current -> current * 0.95 end)
     else
       long_rtt

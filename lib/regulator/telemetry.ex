@@ -4,7 +4,42 @@ defmodule Regulator.Telemetry do
 
   ## Events
 
-  * `[:regulator, :limit]` - Returns the calculated limit from the
+  * `[:regulator, :limit]` - Returns the calculated limit
+
+    #### Measurements
+      * `:limit` - The new limit
+
+    #### Metadata
+      * `:regulator` - The name of the regulator
+
+  * `[:regulator, :ask, :start]` - Is called when asking for access to a protected service
+
+    #### Measurements
+      * `:inflight` - The current inflight requests
+      * `:system_time` - The current, monotonic system time
+
+    #### Metadata
+      * `:regulator` - The regulator name
+
+  * `[:regulator, :ask, :stop]` - Called immediately before an `ask` call returns.
+
+    #### Measurements
+      * `:duration` - The amount of time taken in the regulator
+
+    #### Metadata
+      * `:regulator` - The name of the regulator
+      * `:result` - The result of the call, either `:ok`, `:dropped`, `:drop`, or `:ignore`
+
+  * `[:regulator, :ask, :exception]` - Called if the callback passed to `ask` raises or throws
+
+    #### Measurements
+      * `:duration` - The amount of time taken in the regulator
+
+    #### Metadata
+      * `:kind` - The type of error
+      * `:error` - The error
+      * `:stacktrace` - The stacktrace
+      * `:regulator` - The regulator name
   """
 
   @doc false
@@ -15,6 +50,7 @@ defmodule Regulator.Telemetry do
     time
   end
 
+  @doc false
   def stop(name, start_time, meta, measurements \\ %{}) do
     end_time = System.monotonic_time()
     measurements = Map.merge(measurements, %{duration: end_time - start_time})

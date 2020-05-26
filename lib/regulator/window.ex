@@ -1,8 +1,7 @@
 defmodule Regulator.Window do
-  @moduledoc """
-  Tracks samples over a window of time (typically 1 second). This window
-  is used to derive new concurrency limits.
-  """
+  @moduledoc false
+  # Tracks samples over a window of time (typically 1 second). This window
+  # is used to derive new concurrency limits.
 
   @type t :: %{
     sum: pos_integer(),

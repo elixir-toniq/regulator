@@ -54,4 +54,3 @@ defmodule Regulator.LimitCalculator do
     Process.send_after(self(), :calculate, timeout)
   end
 end
-

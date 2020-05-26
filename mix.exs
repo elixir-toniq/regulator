@@ -1,13 +1,20 @@
 defmodule Regulator.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :regulator,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      description: description(),
+      package: package(),
+      name: "Regulator",
+      source_url: "https://github.com/keathley/regulator",
+      docs: docs()
     ]
   end
 
@@ -23,6 +30,32 @@ defmodule Regulator.MixProject do
   defp deps do
     [
       {:telemetry, "~> 0.4"},
+
+      {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.19", only: [:dev, :test]}
+    ]
+  end
+
+  def description do
+    """
+    Regulator provides adaptive conconcurrency and congestion control algorithms
+    for load shedding.
+    """
+  end
+
+  def package do
+    [
+      name: "regulator",
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/keathley/regulator"}
+    ]
+  end
+
+  def docs do
+    [
+      source_ref: "v#{@version}",
+      source_url: "https://github.com/keathley/regulator",
+      main: "Regulator"
     ]
   end
 end

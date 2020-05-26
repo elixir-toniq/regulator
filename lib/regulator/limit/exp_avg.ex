@@ -23,16 +23,16 @@ defmodule Regulator.Limit.ExpAvg do
         |> update_in([:count], & &1+1)
         |> update_in([:sum], & &1 + sample)
 
-      %{measure | value: measure.sum / measure.count}
+      %{measure | value: trunc(measure.sum / measure.count)}
     else
       factor = 2.0 / (1 + measure.window)
       new_value = (sample * factor) + (measure.value * (1-factor))
-      %{measure | value: new_value}
+      %{measure | value: trunc(new_value)}
     end
   end
 
   def update(measure, f) do
     new_value = f.(measure.value)
-    %{measure | value: new_value}
+    %{measure | value: trunc(new_value)}
   end
 end

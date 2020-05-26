@@ -33,15 +33,17 @@ defmodule Regulator.Limit.Gradient do
   def update(gradient, _current_limit, window) do
     queue_size = 4 # This should be determined dynamically
 
-    short_rtt = last_rtt = Window.avg_rtt(window)
-    long_rtt = update_long_rtt(gradient.long_rtt, last_rtt)
-    gradient = %{gradient | last_rtt: last_rtt, long_rtt: long_rtt}
+    short_rtt  = Window.avg_rtt(window)
+    long_rtt   = update_long_rtt(gradient.long_rtt, short_rtt)
+    gradient   = %{gradient | long_rtt: long_rtt}
 
-    # Bail out if we're halfway to the estimated limit
+    # If we don't have enough inflight requests we don't really need to grow the limit
+    # So just bail out.
     if (window.max_inflight < gradient.estimated_limit / 2) do
+      IO.inspect([window.max_inflight, gradient.estimated_limit], label: "Bailing out")
       {gradient, gradient.estimated_limit}
     else
-      IO.puts "Updating limit"
+      IO.puts "Updating limit: long avg: #{System.convert_time_unit(long_rtt.value, :native, :millisecond)} short rtt: #{System.convert_time_unit(short_rtt, :native, :millisecond)}"
       grad = max(0.5, min(1.0, gradient.rtt_tolerance * long_rtt.value / short_rtt))
       new_limit = gradient.estimated_limit * grad + queue_size
       # Calculate the EMA of the estimated limit
@@ -49,10 +51,9 @@ defmodule Regulator.Limit.Gradient do
 
       # Clamp the limit values based on the users configuration
       new_limit = max(gradient.min_limit, min(gradient.max_limit, new_limit))
-      new_limit = trunc(new_limit)
       gradient = %{gradient | estimated_limit: new_limit}
 
-      {gradient, new_limit}
+      {gradient, trunc(new_limit)}
     end
   end
 

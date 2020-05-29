@@ -3,7 +3,7 @@ defmodule Regulator.LimiterSup do
   use Supervisor
 
   def start_link(opts) do
-    Supervisor.start_link(__MODULE__, opts)
+    Supervisor.start_link(__MODULE__, opts, name: opts[:name])
   end
 
   def init(opts) do
@@ -22,7 +22,8 @@ defmodule Regulator.LimiterSup do
     }
 
     children = [
-      {Regulator.LimitCalculator, calculator_config}
+      {Regulator.Monitor, name: name},
+      {Regulator.LimitCalculator, calculator_config},
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

@@ -20,6 +20,11 @@ defmodule Regulator.Limits do
     :ets.update_counter(:"#{name}-limits", :inflight, {2, -1, 0, 0}, {:inflight, 0})
   end
 
+  def inflight(name) do
+    [{:inflight, count}] = :ets.lookup(:"#{name}-limits", :inflight)
+    count
+  end
+
   # Get the current concurrency limit
   def limit(name) do
     [{:max_inflight, limit}] = :ets.lookup(:"#{name}-limits", :max_inflight)

@@ -63,6 +63,14 @@ defmodule Regulator do
     end
   end
 
+  @doc """
+  Ask for access to a protected service. Instead of executing a callback this
+  function returns a `dropped` atom or a context. It is the callers responsibility
+  to check the context map back in to the regulator using one of the corresponding
+  functions. Care must be taken to avoid leaking these contexts. Otherwise the
+  regulator will not be able to adjust the inflight count which will eventually
+  deadlock the regulator.
+  """
   def ask(name) do
     :ok = Monitor.monitor_me(name)
     inflight = Limits.add(name)
@@ -78,6 +86,9 @@ defmodule Regulator do
     end
   end
 
+  @doc """
+  Checks in a context and marks it as "ok".
+  """
   def ok(ctx) do
     rtt = System.monotonic_time() - ctx.start
     Telemetry.stop(:ask, ctx.start, %{regulator: ctx.name, result: :ok})
@@ -88,6 +99,9 @@ defmodule Regulator do
     :ok
   end
 
+  @doc """
+  Checks in a context and marks it as an error.
+  """
   def error(ctx) do
     rtt = System.monotonic_time() - ctx.start
     Telemetry.stop(:ask, ctx.start, %{regulator: ctx.name, result: :drop})
@@ -98,6 +112,9 @@ defmodule Regulator do
     :ok
   end
 
+  @doc """
+  Checks in a context and ignores the result.
+  """
   def ignore(ctx) do
     Telemetry.stop(:ask, ctx.start, %{regulator: ctx.name, result: :ignore})
     Limits.sub(ctx.name)

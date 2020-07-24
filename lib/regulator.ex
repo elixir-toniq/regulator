@@ -104,7 +104,7 @@ defmodule Regulator do
   """
   def error(ctx) do
     rtt = System.monotonic_time() - ctx.start
-    Telemetry.stop(:ask, ctx.start, %{regulator: ctx.name, result: :drop})
+    Telemetry.stop(:ask, ctx.start, %{regulator: ctx.name, result: :error})
     Buffer.add_sample(ctx.name, {rtt, ctx.inflight, true})
     Limits.sub(ctx.name)
     Monitor.demonitor_me(ctx.name)

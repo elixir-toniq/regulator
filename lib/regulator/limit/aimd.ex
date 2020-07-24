@@ -11,7 +11,7 @@ defmodule Regulator.Limit.AIMD do
   alias Regulator.Window
 
   defstruct [
-    min_limit: 20,
+    min_limit: 5,
     initial_limit: 20,
     max_limit: 200,
     backoff_ratio: 0.9,

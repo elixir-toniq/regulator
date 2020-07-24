@@ -11,7 +11,7 @@ defmodule Regulator.Limit.Gradient do
 
   defstruct [
     initial_limit: 20,
-    min_limit: 20,
+    min_limit: 5,
     max_limit: 200,
     smoothing: 0.2,
     rtt_tolerance: 1.5,

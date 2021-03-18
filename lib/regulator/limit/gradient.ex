@@ -2,6 +2,13 @@ defmodule Regulator.Limit.Gradient do
   @moduledoc """
   Limiter based on the gradient of change. Based on Netflix's gradient2 algorithm.
   https://github.com/Netflix/concurrency-limits.
+
+  ## Options
+  * `initial_limit` - The initial limit when the regulator is installed (defaults to 20).
+  * `min_limit` - The minimum limit for the regulator (defaults to 5).
+  * `max_limit` - The maximum limit for the regulator (defaults to 200).
+  * `smoothing` - How quickly to begin backing off (defaults to 0.2).
+  * `rtt_tolerance` - The tolerance for change in latency (defaults to 1.5).
   """
 
   @behaviour Regulator.Limit

@@ -31,6 +31,7 @@ defmodule Regulator.MixProject do
     [
       {:telemetry, "~> 0.4"},
       {:plug, "~> 1.10"},
+      {:norm, "~> 0.12"},
 
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.19", only: [:dev, :test]},

@@ -54,6 +54,21 @@ def fetch(id) do
 end
 ```
 
+## Limit algorithms
+
+Regulator provides different limit algorithms for different use cases; AIMD, Gradient, and Static.
+
+AIMD updates the concurrency limit using a technique known as "additive increase, multiplicative decrease".
+If regulator detects that more concurrency tokens are required, no errors have ocured, and the average latency is below the target value,
+Regulator will additively increase the concurrency limit. If there are errors or the average
+latency begins to rise, than regulator will multiplicatively decrease the limit.
+
+The Gradient limit algorithm looks at the gradient of change between long term latency and the current average latency.
+If this gradient of change begins to exceed acceptable bounds, the limiter will
+begin to decrease the concurrency limit.
+
+The static limit simply uses a fixed value which is never updated.
+
 ## Should I use this
 
 There are additional tests that need to be added and there may be performance

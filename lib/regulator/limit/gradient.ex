@@ -4,11 +4,16 @@ defmodule Regulator.Limit.Gradient do
   https://github.com/Netflix/concurrency-limits.
 
   ## Options
-  * `initial_limit` - The initial limit when the regulator is installed (defaults to 20).
-  * `min_limit` - The minimum limit for the regulator (defaults to 5).
-  * `max_limit` - The maximum limit for the regulator (defaults to 200).
-  * `smoothing` - How quickly to begin backing off (defaults to 0.2).
-  * `rtt_tolerance` - The tolerance for change in latency (defaults to 1.5).
+  * `:initial_limit` - The initial limit when the regulator is installed (defaults to 20).
+  * `:min_limit` - The minimum limit for the regulator (defaults to 5).
+  * `:max_limit` - The maximum limit for the regulator (defaults to 200).
+  * `:smoothing` - Determines how aggressively the concurrency limit can shrink
+    if there is queueing. Numbers should be between 0.0 and 1.0. Higher numbers
+    will cause the limit to shrink faster.
+  * `:rtt_tolerance` - Specifies how much change in average round trip time will
+    be allowed before reducing the concurrency limit. A value of 2.0 would mean
+    that a 2x increase in rtt would be acceptable. Default 1.5.
+  * `:long_window_count` - Defines the number of sample windows that will be considered in the long term moving average. Setting this value lower will cause the long term window to adjust more aggressively. Default 600.
   """
 
   @behaviour Regulator.Limit
@@ -17,37 +22,44 @@ defmodule Regulator.Limit.Gradient do
   alias Regulator.Window
 
   defstruct [
-    initial_limit: 20,
     min_limit: 5,
     max_limit: 200,
     smoothing: 0.2,
     rtt_tolerance: 1.5,
-    long_rtt: ExpAvg.new(100, 10),
-    estimated_limit: 20,
+    # This LongRTT is an exponential moving average. We use 600 samples here in
+    # which roughly works out to 10 minutes of sample time.
+    long_rtt: ExpAvg.new(600, 10),
+    estimated_limit: 5,
     last_rtt: 0,
   ]
 
   @impl true
   def new(opts) do
+    opts = if opts[:initial_limit] do
+      put_in(opts, [:estimated_limit], opts[:initial_limit])
+    else
+      opts
+    end
+
     struct(__MODULE__, opts)
   end
 
   @impl true
   def initial(config) do
-    config.initial_limit
+    config.estimated_limit
   end
 
   @impl true
   def update(gradient, _current_limit, window) do
-    queue_size = 4 # This should be determined dynamically
+    queue_size = 2 # This should be determined dynamically
 
     case Window.avg_rtt(window) do
       0 ->
         {gradient, gradient.estimated_limit}
 
       short_rtt ->
-        long_rtt   = update_long_rtt(gradient.long_rtt, short_rtt)
-        gradient   = %{gradient | long_rtt: long_rtt}
+        long_rtt = update_long_rtt(gradient.long_rtt, short_rtt)
+        gradient = %{gradient | long_rtt: long_rtt}
 
         # If we don't have enough inflight requests we don't really need to grow the limit
         # So just bail out.

@@ -17,13 +17,13 @@ defmodule Regulator.Limit.AIMD do
   as a backoff situation and will begin to reduce the concurrency limit.
 
   ## Options
-  * `min_limit` - The minimum concurrency limit (defaults to 5)
-  * `initial_limit` - The initial concurrency limit when the regulator is installed (deafults to 20)
-  * `max_limit` - The maximum concurrency limit (defaults to 200)
-  * `step_increase` - The number of tokens to add when regulator is increasing the concurrency limit (defaults to 10).
-  * `backoff_ratio` - Floating point value for how quickly to reduce the concurrency limit (defaults to 0.9)
-  * `target_avg_latency` - This is the average latency in milliseconds for the system regulator is protecting. If the average latency drifts above this value Regulator considers it an error and backs off. Defaults to 5.
-  * `timeout` - alias for `target_avg_latency`.
+  * `:min_limit` - The minimum concurrency limit (defaults to 5)
+  * `:initial_limit` - The initial concurrency limit when the regulator is installed (deafults to 20)
+  * `:max_limit` - The maximum concurrency limit (defaults to 200)
+  * `:step_increase` - The number of tokens to add when regulator is increasing the concurrency limit (defaults to 10).
+  * `:backoff_ratio` - Floating point value for how quickly to reduce the concurrency limit (defaults to 0.9)
+  * `:target_avg_latency` - This is the average latency in milliseconds for the system regulator is protecting. If the average latency drifts above this value Regulator considers it an error and backs off. Defaults to 5.
+  * `:timeout` - alias for `target_avg_latency`.
   """
   @behaviour Regulator.Limit
 

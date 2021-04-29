@@ -9,9 +9,15 @@ defmodule Regulator do
   alias Regulator.Telemetry
   alias Regulator.Monitor
 
+  @type token :: map()
+  @type result :: {:ok, term()}
+                | {:error, term()}
+                | {:ignore, term()}
+
   @doc """
   Creates a new regulator.
   """
+  @spec install(name :: term(), {module(), Keyword.t()}) :: DynamicSupervisor.on_start_child()
   def install(name, {mod, opts}) do
     opts = %{name: name, limit: {mod, mod.new(opts)}}
     DynamicSupervisor.start_child(Regulators, {LimiterSup, opts})
@@ -20,6 +26,7 @@ defmodule Regulator do
   @doc """
   Removes a regulator.
   """
+  @spec uninstall(name :: term()) :: :ok | {:error, :not_found}
   def uninstall(name) do
     # Find the limit supervisor and terminate it. This will also clean up the
     # ets tables that we've created since they are created by the supervisor
@@ -45,6 +52,7 @@ defmodule Regulator do
   * `:error` - The call failed or timed out. This is used as a signal to backoff or otherwise adjust the limit.
   * `:ignore` - The call should not be counted in the concurrency limit. This is typically used to filter out status checks and other low latency RPCs.
   """
+  @spec ask(term(), (-> result())) :: term()
   def ask(name, f) do
     with {:ok, ctx} <- ask(name) do
       case safe_execute(ctx, f) do
@@ -71,6 +79,7 @@ defmodule Regulator do
   regulator will not be able to adjust the inflight count which will eventually
   deadlock the regulator.
   """
+  @spec ask(name :: term()) :: {:ok, token()} | :dropped
   def ask(name) do
     :ok = Monitor.monitor_me(name)
     inflight = Limits.add(name)
@@ -89,6 +98,7 @@ defmodule Regulator do
   @doc """
   Checks in a context and marks it as "ok".
   """
+  @spec ok(token()) :: :ok
   def ok(ctx) do
     rtt = System.monotonic_time() - ctx.start
     Telemetry.stop(:ask, ctx.start, %{regulator: ctx.name, result: :ok})
@@ -102,6 +112,7 @@ defmodule Regulator do
   @doc """
   Checks in a context and marks it as an error.
   """
+  @spec error(token()) :: :ok
   def error(ctx) do
     rtt = System.monotonic_time() - ctx.start
     Telemetry.stop(:ask, ctx.start, %{regulator: ctx.name, result: :error})
@@ -115,6 +126,7 @@ defmodule Regulator do
   @doc """
   Checks in a context and ignores the result.
   """
+  @spec ignore(token()) :: :ok
   def ignore(ctx) do
     Telemetry.stop(:ask, ctx.start, %{regulator: ctx.name, result: :ignore})
     Limits.sub(ctx.name)

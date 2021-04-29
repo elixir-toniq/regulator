@@ -8,6 +8,7 @@ defmodule Regulator.MixProject do
       app: :regulator,
       version: @version,
       elixir: "~> 1.9",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
@@ -17,6 +18,10 @@ defmodule Regulator.MixProject do
       docs: docs()
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:dev), do: ["lib", "test/support/usage.ex"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do
@@ -32,6 +37,7 @@ defmodule Regulator.MixProject do
       {:telemetry, "~> 0.4"},
       {:plug, "~> 1.10"},
 
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.19", only: [:dev, :test]},
       {:propcheck, "~> 1.2", only: [:dev, :test]},

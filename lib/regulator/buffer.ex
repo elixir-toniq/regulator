@@ -1,8 +1,8 @@
 defmodule Regulator.Buffer do
   @moduledoc false
   # The buffer is designed to efficiently collect statistics from clients
-  # It stores each sample in an ets table using the processes currect scheduler
-  # id. This helps reduce contention on each ets table since, in theory, only one process should be writing to a table at a time.
+  # It stores each sample in an ETS table using the processes current scheduler
+  # id. This helps reduce contention on each ETS table since, in theory, only one process should be writing to a table at a time.
   # When we calculate new limits we flush the buffer of all the samples. This is
   # more expensive but is acceptable for the limit calculator.
 

@@ -83,9 +83,10 @@ defmodule Regulator do
   def ask(name) do
     :ok = Monitor.monitor_me(name)
     inflight = Limits.add(name)
-    start = Telemetry.start(:ask, %{regulator: name}, %{inflight: inflight})
+    limit = Limits.limit(name)
+    start = Telemetry.start(:ask, %{regulator: name}, %{inflight: min(inflight, limit)})
 
-    if inflight <= Limits.limit(name) do
+    if inflight <= limit do
       {:ok, %{start: start, name: name, inflight: inflight}}
     else
       Limits.sub(name)

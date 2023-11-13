@@ -15,14 +15,15 @@ defmodule Regulator.Monitor do
   end
 
   def demonitor_me(name) do
-    GenServer.call(:"#{name}-monitor", :monitor)
+    GenServer.call(:"#{name}-monitor", :demonitor)
   end
 
   def init(opts) do
     data = %{
       name: opts[:name],
-      refs: %{},
+      refs: %{}
     }
+
     {:ok, data}
   end
 
@@ -34,7 +35,10 @@ defmodule Regulator.Monitor do
 
   def handle_call(:demonitor, {pid, _}, state) do
     {ref, refs} = Map.pop(state.refs, pid)
-    Process.demonitor(ref)
+
+    if ref do
+      Process.demonitor(ref)
+    end
 
     {:reply, :ok, %{state | refs: refs}}
   end

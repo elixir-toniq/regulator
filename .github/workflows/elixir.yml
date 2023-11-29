@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        elixir: [1.11]
-        otp: [23.3]
+        elixir: ['1.16.x', '1.15.x', '1.14.x']
+        otp: ['26.x', '25.x']
     steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -52,8 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        elixir: [1.11]
-        otp: [23.3]
+        elixir: ['1.16.x', '1.15.x', '1.14.x']
+        otp: ['26.x', '25.x']
     steps:
     - uses: actions/checkout@v2
       with:
@@ -83,8 +83,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        elixir: [1.11]
-        otp: [23.3]
+        elixir: ['1.16.x', '1.15.x', '1.14.x']
+        otp: ['26.x', '25.x']
     steps:
     - uses: actions/checkout@v2
       with:

@@ -18,6 +18,10 @@ defmodule Regulator.Monitor do
     GenServer.call(:"#{name}-monitor", :demonitor)
   end
 
+  def monitored_pids(name) do
+    GenServer.call(:"#{name}-monitor", :get_monitors)
+  end
+
   def init(opts) do
     data = %{
       name: opts[:name],
@@ -41,6 +45,10 @@ defmodule Regulator.Monitor do
     end
 
     {:reply, :ok, %{state | refs: refs}}
+  end
+
+  def handle_call(:get_monitors, _, state) do
+    {:reply, Map.keys(state.refs), state}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do

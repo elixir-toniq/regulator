@@ -59,7 +59,7 @@ end
 Regulator provides different limit algorithms for different use cases; AIMD, Gradient, and Static.
 
 AIMD updates the concurrency limit using a technique known as "additive increase, multiplicative decrease".
-If regulator detects that more concurrency tokens are required, no errors have ocured, and the average latency is below the target value,
+If regulator detects that more concurrency tokens are required, no errors have occurred, and the average latency is below the target value,
 Regulator will additively increase the concurrency limit. If there are errors or the average
 latency begins to rise, than regulator will multiplicatively decrease the limit.
 

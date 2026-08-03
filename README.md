@@ -15,7 +15,7 @@ end)
 If you're used to circuit breakers, you can think of Regulator as an adaptive,
 dynamic circuit breaker. Regulator determines if there are errors or potential
 for errors by measuring the running system. When it detects errors - more specifically
-it detects queueing - it begins to lower the number of concurrent _things_ that
+it detects queuing - it begins to lower the number of concurrent _things_ that
 can happen in the system.
 
 For instance, Regulator has determined that it can allow 4 concurrent requests to
@@ -59,7 +59,7 @@ end
 Regulator provides different limit algorithms for different use cases; AIMD, Gradient, and Static.
 
 AIMD updates the concurrency limit using a technique known as "additive increase, multiplicative decrease".
-If regulator detects that more concurrency tokens are required, no errors have ocured, and the average latency is below the target value,
+If regulator detects that more concurrency tokens are required, no errors have occurred, and the average latency is below the target value,
 Regulator will additively increase the concurrency limit. If there are errors or the average
 latency begins to rise, than regulator will multiplicatively decrease the limit.
 
